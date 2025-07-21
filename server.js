@@ -17,7 +17,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // pour le
 
 // Routes
 const authRoutes = require('./routes/auth');
-const articleRoutes = require('./routes/article');
+const articleRoutes = require('./routes/articles');
 app.post('/test-body', (req, res) => {
   console.log('🔍 req.body reçu dans /test-body :', req.body);
   res.json({ body: req.body });

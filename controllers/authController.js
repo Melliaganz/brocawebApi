@@ -13,8 +13,6 @@ const generateToken = (user) => {
 
 // Enregistrement
 exports.register = async (req, res) => {
-      console.log('📦 req.body dans register:', req.body); // 👈 ajoute cette ligne
-
   try {
     const { nom, email, motDePasse } = req.body;
 

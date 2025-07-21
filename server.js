@@ -17,16 +17,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // pour le
 
 // Routes
 const authRoutes = require('./routes/auth');
-const articleRoutes = require('./routes/articles');
+const articleRoutes = require('./routes/article');
+app.post('/test-body', (req, res) => {
+  console.log('🔍 req.body reçu dans /test-body :', req.body);
+  res.json({ body: req.body });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
 
 // Connexion à MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
+
 .then(() => {
     console.log('✅ Connecté à MongoDB');
     const PORT = process.env.PORT || 5000;

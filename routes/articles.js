@@ -39,5 +39,6 @@ router.delete(
   adminMiddleware,
   articleController.deleteArticle
 );
+router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), articleController.updateArticle);
 
 module.exports = router;

@@ -66,3 +66,26 @@ exports.deleteArticle = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la suppression.', error: err.message });
   }
 };
+exports.updateArticle = async (req, res) => {
+  try {
+    const updates = req.body;
+    if (req.file) {
+      updates.image = req.file.filename;
+    }
+
+    const updatedArticle = await Article.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+
+    if (!updatedArticle) {
+      return res.status(404).json({ message: "Article non trouvé." });
+    }
+
+    res.json({ message: "Article mis à jour avec succès.", article: updatedArticle });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur.", error: err.message });
+  }
+};
+

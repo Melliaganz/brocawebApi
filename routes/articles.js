@@ -1,44 +1,57 @@
-// routes/articles.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const articleController = require('../controllers/articleController');
-const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
-const multer = require('multer');
-const path = require('path');
+const {
+  createArticle,
+  getAllArticles,
+  getArticleById,
+  deleteArticle,
+  updateArticle,
+} = require("../controllers/articleController");
+
+const authMiddleware = require("../middleware/authMiddleware");
+const adminMiddleware = require("../middleware/adminMiddleware");
+const multer = require("multer");
+const path = require("path");
 
 // Config multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({ storage });
 
-// Routes publiques
-router.get('/', articleController.getAllArticles);
-router.get('/:id', articleController.getArticleById);
+// 🔓 Routes publiques
+router.get("/", getAllArticles);
+router.get("/:id", getArticleById);
 
-// Routes protégées (admin)
+// 🔐 Routes protégées (admin)
 router.post(
-  '/',
+  "/",
   authMiddleware,
   adminMiddleware,
-  upload.single('image'),
-  articleController.createArticle
+  upload.array("images", 10),
+  createArticle
+);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  upload.array("images", 10),
+  updateArticle
 );
 
 router.delete(
-  '/:id',
+  "/:id",
   authMiddleware,
   adminMiddleware,
-  articleController.deleteArticle
+  deleteArticle
 );
-router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), articleController.updateArticle);
 
 module.exports = router;

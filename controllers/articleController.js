@@ -7,12 +7,14 @@ const path = require("path");
 // controllers/articleController.js
 exports.createArticle = async (req, res) => {
   try {
-    const { titre, description, prix, etat, categorie } = req.body;
+    const { titre, description, prix, etat, categorie, mainImageIndex } = req.body;
 
     if (!req.files || req.files.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Au moins une image est requise." });
+      return res.status(400).json({ message: "Au moins une image est requise." });
+    }
+
+    if (req.files.length > 5) {
+      return res.status(400).json({ message: "Vous ne pouvez envoyer que 5 images maximum." });
     }
 
     const imageFilenames = req.files.map((file) => file.filename);
@@ -24,17 +26,17 @@ exports.createArticle = async (req, res) => {
       etat,
       categorie,
       images: imageFilenames,
+      mainImageIndex: Math.min(Math.max(parseInt(mainImageIndex), 0), imageFilenames.length - 1),
       createdBy: req.user.id,
     });
 
     await article.save();
     res.status(201).json(article);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Erreur lors de la création.", error: err.message });
+    res.status(500).json({ message: "Erreur lors de la création.", error: err.message });
   }
 };
+
 
 // Obtenir tous les articles
 exports.getAllArticles = async (req, res) => {
@@ -90,27 +92,24 @@ exports.deleteArticle = async (req, res) => {
 
 exports.updateArticle = async (req, res) => {
   try {
-    const updates = req.body;
+    const { titre, description, prix, etat, categorie, existingImages, mainImageIndex } = req.body;
 
-    // Gérer les nouvelles images si uploadées
-    if (req.files && req.files.length > 0) {
-      updates.images = req.files.map((file) => file.filename);
-    }
+    const article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ message: "Article non trouvé." });
 
-    const updatedArticle = await Article.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    );
+    const newImages = req.files?.map((file) => file.filename) || [];
 
-    if (!updatedArticle) {
-      return res.status(404).json({ message: "Article non trouvé." });
-    }
+    article.titre = titre;
+    article.description = description;
+    article.prix = prix;
+    article.etat = etat;
+    article.categorie = categorie;
+    article.images = [...(Array.isArray(existingImages) ? existingImages : [existingImages]), ...newImages];
+    article.mainImageIndex = Number(mainImageIndex) || 0;
 
-    res.json({
-      message: "Article mis à jour avec succès.",
-      article: updatedArticle,
-    });
+    await article.save();
+
+    res.json({ message: "Article mis à jour avec succès.", article });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur.", error: err.message });
   }

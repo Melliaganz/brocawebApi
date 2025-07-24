@@ -38,7 +38,7 @@ router.post(
   "/",
   authMiddleware,
   adminMiddleware,
-  upload.array("images", 10),
+  upload.array("images", 5),
   createArticle
 );
 
@@ -46,9 +46,10 @@ router.put(
   "/:id",
   authMiddleware,
   adminMiddleware,
-  upload.array("images", 10),
+  upload.array("newImages", 5),
   updateArticle
 );
+
 
 router.delete("/:id", authMiddleware, adminMiddleware, deleteArticle);
 

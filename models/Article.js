@@ -7,11 +7,11 @@ const articleSchema = new mongoose.Schema({
   prix: { type: Number, required: true },
   etat: { type: String, required: true },
   categorie: { type: String, required: true },
-
   images: [{ type: String }],
-
+  mainImageIndex: { type: Number, default: 0 }, // ✅ ici
   createdAt: { type: Date, default: Date.now },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 });
+
 
 module.exports = mongoose.model('Article', articleSchema);

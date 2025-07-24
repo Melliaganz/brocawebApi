@@ -24,7 +24,10 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { files: 5 },
+});
 
 // 🔓 Routes publiques
 router.get("/", getAllArticles);
@@ -47,11 +50,6 @@ router.put(
   updateArticle
 );
 
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  deleteArticle
-);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteArticle);
 
 module.exports = router;

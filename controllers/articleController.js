@@ -7,14 +7,18 @@ const path = require("path");
 // controllers/articleController.js
 exports.createArticle = async (req, res) => {
   try {
-    const { titre, description, prix, etat, categorie, mainImageIndex } = req.body;
+    const { titre, description, prix, etat, categorie, quantite } = req.body;
 
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "Au moins une image est requise." });
+      return res
+        .status(400)
+        .json({ message: "Au moins une image est requise." });
     }
 
     if (req.files.length > 5) {
-      return res.status(400).json({ message: "Vous ne pouvez envoyer que 5 images maximum." });
+      return res
+        .status(400)
+        .json({ message: "Vous ne pouvez envoyer que 5 images maximum." });
     }
 
     const imageFilenames = req.files.map((file) => file.filename);
@@ -25,18 +29,23 @@ exports.createArticle = async (req, res) => {
       prix,
       etat,
       categorie,
+      quantite: quantite !== undefined ? Number(quantite) : 1,
       images: imageFilenames,
-      mainImageIndex: Math.min(Math.max(parseInt(mainImageIndex), 0), imageFilenames.length - 1),
+      mainImageIndex: Math.min(
+        Math.max(parseInt(mainImageIndex), 0),
+        imageFilenames.length - 1
+      ),
       createdBy: req.user.id,
     });
 
     await article.save();
     res.status(201).json(article);
   } catch (err) {
-    res.status(500).json({ message: "Erreur lors de la création.", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la création.", error: err.message });
   }
 };
-
 
 // Obtenir tous les articles
 exports.getAllArticles = async (req, res) => {
@@ -92,10 +101,20 @@ exports.deleteArticle = async (req, res) => {
 
 exports.updateArticle = async (req, res) => {
   try {
-    const { titre, description, prix, etat, categorie, existingImages, mainImageIndex } = req.body;
+    const {
+      titre,
+      description,
+      prix,
+      etat,
+      categorie,
+      quantite,
+      existingImages,
+      mainImageIndex,
+    } = req.body;
 
     const article = await Article.findById(req.params.id);
-    if (!article) return res.status(404).json({ message: "Article non trouvé." });
+    if (!article)
+      return res.status(404).json({ message: "Article non trouvé." });
 
     const newImages = req.files?.map((file) => file.filename) || [];
 
@@ -104,7 +123,11 @@ exports.updateArticle = async (req, res) => {
     article.prix = prix;
     article.etat = etat;
     article.categorie = categorie;
-    article.images = [...(Array.isArray(existingImages) ? existingImages : [existingImages]), ...newImages];
+    article.quantite = quantite !== undefined ? Number(quantite) : article.quantite;
+    article.images = [
+      ...(Array.isArray(existingImages) ? existingImages : [existingImages]),
+      ...newImages,
+    ];
     article.mainImageIndex = Number(mainImageIndex) || 0;
 
     await article.save();

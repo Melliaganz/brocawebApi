@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
+const orderRoutes = require("./routes/orderRoutes");
+
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -18,6 +20,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // pour le
 // Routes
 const authRoutes = require('./routes/auth');
 const articleRoutes = require('./routes/articles');
+const cartRoutes = require("./routes/cart");
+
 app.post('/test-body', (req, res) => {
   console.log('🔍 req.body reçu dans /test-body :', req.body);
   res.json({ body: req.body });
@@ -25,6 +29,8 @@ app.post('/test-body', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGO_URI)

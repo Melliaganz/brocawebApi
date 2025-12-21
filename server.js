@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
+const multer = require("multer");
 const orderRoutes = require("./routes/orderRoutes");
 
 // Charger les variables d'environnement
@@ -16,14 +17,22 @@ app.use(cors());
 app.use(express.json()); // Pour lire le JSON dans les requêtes
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // pour les images
 
+// Gestion globale des erreurs (à placer après toutes les routes)
 app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    return res.status(400).json({
-      message: "Le format JSON envoyé est invalide.",
-      error: err.message,
-    });
+  // Erreur Multer
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_COUNT") {
+      return res.status(400).json({ message: "Limite de 5 images dépassée." });
+    }
+    return res.status(400).json({ message: "Erreur lors de l'upload.", error: err.message });
   }
-  next();
+
+  // Autres erreurs (y compris celles venant de next(err))
+  const status = err.status || 500;
+  res.status(status).json({ 
+    message: err.message || "Une erreur interne est survenue.",
+    error: process.env.NODE_ENV === 'development' ? err.stack : err.message 
+  });
 });
 
 // Routes

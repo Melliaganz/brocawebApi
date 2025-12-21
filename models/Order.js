@@ -8,9 +8,15 @@ const orderSchema = new mongoose.Schema({
       titre: String,
       prix: Number,
       quantity: Number,
-    }
+    },
   ],
-  status: { type: String, enum: ["en attente", "validée", "annulée"], default: "en attente" },
+  totalPrice: { type: Number, required: true },
+
+  status: {
+    type: String,
+    enum: ["en attente", "validée", "annulée", "payé"],
+    default: "en attente",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

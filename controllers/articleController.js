@@ -46,6 +46,7 @@ exports.getAllArticles = async (req, res) => {
     const articles = await Article.find().populate("createdBy", "nom email");
     res.status(200).json(articles);
   } catch (err) {
+    console.error(`[GET_ALL_ARTICLES_ERROR] :`, err);
     res.status(500).json({ message: "Erreur serveur.", error: err.message });
   }
 };
@@ -71,11 +72,15 @@ exports.deleteArticle = async (req, res) => {
 
     if (article.images && article.images.length > 0) {
       for (const url of article.images) {
-        try {
-          const publicId = url.split('/').pop().split('.')[0];
-          await cloudinary.uploader.destroy(`articles/${publicId}`);
-        } catch (cloudErr) {
-          console.error(`[CLOUDINARY_CLEANUP_ERROR] :`, cloudErr);
+        if (url.includes("cloudinary.com")) {
+          try {
+            const parts = url.split('/');
+            const fileName = parts[parts.length - 1];
+            const publicId = fileName.split('.')[0];
+            await cloudinary.uploader.destroy(`articles/${publicId}`);
+          } catch (cloudErr) {
+            console.error(`[CLOUDINARY_DELETE_ERROR] :`, cloudErr);
+          }
         }
       }
     }
@@ -103,11 +108,15 @@ exports.updateArticle = async (req, res) => {
     const imagesToDelete = article.images.filter((img) => !keptImages.includes(img));
 
     for (const url of imagesToDelete) {
-      try {
-        const publicId = url.split('/').pop().split('.')[0];
-        await cloudinary.uploader.destroy(`articles/${publicId}`);
-      } catch (cloudErr) {
-        console.error(`[CLOUDINARY_CLEANUP_ERROR] :`, cloudErr);
+      if (url.includes("cloudinary.com")) {
+        try {
+          const parts = url.split('/');
+          const fileName = parts[parts.length - 1];
+          const publicId = fileName.split('.')[0];
+          await cloudinary.uploader.destroy(`articles/${publicId}`);
+        } catch (cloudErr) {
+          console.error(`[CLOUDINARY_DELETE_ERROR] :`, cloudErr);
+        }
       }
     }
 

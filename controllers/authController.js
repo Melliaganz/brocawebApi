@@ -105,3 +105,23 @@ exports.adminCreateUser = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur.", error: error.message });
   }
 };
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-motDePasse");
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des utilisateurs." });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ message: "Vous ne pouvez pas supprimer votre propre compte admin." });
+    }
+    await User.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Utilisateur supprimé avec succès." });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la suppression." });
+  }
+};

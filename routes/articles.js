@@ -10,30 +10,11 @@ const {
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
-const multer = require("multer");
-const path = require("path");
+const upload = require("../middleware/upload");
 
-// Config multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { files: 5 },
-});
-
-// 🔓 Routes publiques
 router.get("/", getAllArticles);
 router.get("/:id", getArticleById);
 
-// 🔐 Routes protégées (admin)
 router.post(
   "/",
   authMiddleware,
@@ -49,7 +30,6 @@ router.put(
   upload.array("newImages", 5),
   updateArticle
 );
-
 
 router.delete("/:id", authMiddleware, adminMiddleware, deleteArticle);
 

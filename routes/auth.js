@@ -13,7 +13,7 @@ router.post("/admin/create-user", authMiddleware, (req, res, next) => {
     next();
 }, authController.adminCreateUser);
 
-router.get("/admin/user", authMiddleware, (req, res, next) => {
+router.get("/admin/users", authMiddleware, (req, res, next) => {
     if(req.user.role !== "admin") {
         return res.status(403).json({ message: "Accès refusé. Admin requis."})
     }

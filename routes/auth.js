@@ -20,7 +20,7 @@ router.get("/admin/users", authMiddleware, (req, res, next) => {
     next();
 }, authController.getAllUsers)
 
-router.get("/admin/users/:id", (req,res,next) => {
+router.delete("/admin/users/:id", (req,res,next) => {
     if (req.user.role !== "admin") {
         return res.status(403).json({message: "Accès refusé. admin requis"})
     }

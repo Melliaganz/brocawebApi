@@ -27,7 +27,12 @@ router.get(
   adminMiddleware,
   authController.getAllUsers
 );
-
+router.put(
+  "/admin/users/:id",
+  authMiddleware,
+  adminMiddleware,
+  authController.updateUser
+);
 router.delete(
   "/admin/users/:id",
   authMiddleware,

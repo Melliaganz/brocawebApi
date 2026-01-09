@@ -105,12 +105,44 @@ exports.adminCreateUser = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur.", error: error.message });
   }
 };
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-motDePasse");
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Erreur lors de la récupération des utilisateurs." });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { nom, email, motDePasse, role } = req.body;
+    
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    if (nom) user.nom = nom;
+    if (email) user.email = email;
+    if (role) user.role = role;
+    if (motDePasse) user.motDePasse = motDePasse;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Utilisateur mis à jour avec succès.",
+      user: {
+        id: user._id,
+        nom: user.nom,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(`[ADMIN_USER_UPDATE_ERROR] :`, error);
+    res.status(500).json({ message: "Erreur lors de la mise à jour.", error: error.message });
   }
 };
 

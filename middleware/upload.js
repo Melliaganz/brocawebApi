@@ -13,16 +13,15 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'articles',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    public_id: (req, file) => {
-      const uniqueName = Date.now() + '-' + Math.floor(Math.random() * 1e9);
-      return uniqueName;
-    },
+    // On retire le public_id manuel pour laisser Cloudinary générer un ID unique sécurisé
+    // Cela évite les erreurs de signature ("Invalid Signature")
+    transformation: [{ width: 1000, height: 1000, crop: 'limit' }] 
   },
 });
-
+console.log("Cloudinary Config Name:", cloudinary.config().cloud_name);
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
 });
 
 module.exports = upload;

@@ -26,12 +26,13 @@ const authRoutes = require("./routes/auth");
 const articleRoutes = require("./routes/articles");
 const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/orderRoutes");
+const categoryRoutes = require("./routes/category")
 
 app.use("/api/auth", authRoutes);
 app.use("/api/articles", articleRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
-
+app.use ("/api/categories", categoryRoutes)
 app.post("/test-body", (req, res) => {
     res.json({ body: req.body });
 });

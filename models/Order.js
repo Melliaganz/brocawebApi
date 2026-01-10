@@ -11,11 +11,10 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   totalPrice: { type: Number, required: true },
-
   status: {
     type: String,
-    enum: ["en attente", "validée", "annulée", "payé"],
-    default: "en attente",
+    enum: ["En cours", "Traité", "Livré"],
+    default: "En cours",
   },
   createdAt: { type: Date, default: Date.now },
 });

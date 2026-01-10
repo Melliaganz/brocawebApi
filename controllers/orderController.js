@@ -26,10 +26,11 @@ exports.createOrder = async (req, res) => {
         if (article.images && article.images.length > 0) {
           article.images.forEach((imageName) => {
             const filePath = path.join(__dirname, "..", "uploads", imageName);
-            
+
             if (fs.existsSync(filePath)) {
               fs.unlink(filePath, (err) => {
-                if (err) console.error(`Erreur suppression image ${imageName}:`, err);
+                if (err)
+                  console.error(`Erreur suppression image ${imageName}:`, err);
                 else console.log(`Fichier ${imageName} supprimé du serveur.`);
               });
             }
@@ -50,7 +51,7 @@ exports.createOrder = async (req, res) => {
     const order = new Order({
       user: userId,
       items: updatedItems,
-      status: "payé",
+      status: "En cours", // Mise à jour ici
       totalPrice: updatedItems.reduce(
         (acc, curr) => acc + curr.prix * curr.quantity,
         0
@@ -78,6 +79,22 @@ exports.getAllOrders = async (req, res) => {
 
     res.status(200).json(orders);
   } catch (err) {
-    res.status(500).json({ message: "Erreur récupération commandes", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Erreur récupération commandes", error: err.message });
+  }
+};
+
+exports.getUserOrders = async (req, res) => {
+  try {
+    const userId = req.user.id; // Récupéré via authMiddleware
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+
+    res.status(200).json(orders);
+  } catch (err) {
+    res.status(500).json({
+      message: "Erreur récupération de vos commandes",
+      error: err.message,
+    });
   }
 };

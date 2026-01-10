@@ -1,13 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { createOrder, getAllOrders, getUserOrders } = require("../controllers/orderController");
+const { 
+  createOrder, 
+  getAllOrders, 
+  getUserOrders, 
+  updateOrderStatus 
+} = require("../controllers/orderController");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Route pour les clients (doit être avant toute route avec paramètre :id)
+// Route client
 router.get("/my-orders", authMiddleware, getUserOrders);
 
-// Routes générales
+// Routes générales & Admin
 router.post("/", authMiddleware, createOrder);
 router.get("/", authMiddleware, getAllOrders);
+router.put("/:id/status", authMiddleware, updateOrderStatus); // Nouvelle route admin
 
 module.exports = router;

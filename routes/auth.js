@@ -14,6 +14,13 @@ const adminMiddleware = (req, res, next) => {
 router.post("/register", authController.register);
 router.post("/login", authController.login);
 
+router.get(
+  "/admin/stats",
+  authMiddleware,
+  adminMiddleware,
+  authController.getAdminDashboard
+);
+
 router.post(
   "/admin/create-user",
   authMiddleware,
@@ -27,12 +34,14 @@ router.get(
   adminMiddleware,
   authController.getAllUsers
 );
+
 router.put(
   "/admin/users/:id",
   authMiddleware,
   adminMiddleware,
   authController.updateUser
 );
+
 router.delete(
   "/admin/users/:id",
   authMiddleware,

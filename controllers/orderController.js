@@ -119,7 +119,6 @@ exports.deleteOrder = async (req, res) => {
         const articleExists = await Article.findById(item.article);
         const otherOrderUsingImg = await Order.findOne({ _id: { $ne: id }, "items.image": item.image });
         
-        // Si l'article n'existe plus et aucune autre commande n'en a besoin
         if (!articleExists && !otherOrderUsingImg) {
           const publicId = extractPublicId(item.image);
           if (publicId) await cloudinary.uploader.destroy(publicId);

@@ -1,18 +1,43 @@
 const Article = require("../models/Article");
 const cloudinary = require("cloudinary").v2;
 
+// Fonction utilitaire pour extraire le public_id correctement
+const extractPublicId = (url) => {
+  try {
+    // Découpe l'URL pour récupérer la partie après 'upload/'
+    const parts = url.split("upload/")[1].split("/");
+    // On enlève le premier élément (la version v12345678)
+    parts.shift();
+    // On récupère le reste et on enlève l'extension (.jpg, .png)
+    const publicIdWithExtension = parts.join("/");
+    return publicIdWithExtension.split(".")[0];
+  } catch (err) {
+    return null;
+  }
+};
+
 exports.createArticle = async (req, res) => {
   try {
-    const { titre, description, prix, etat, categorie, quantite, mainImageIndex } = req.body;
-    
-    console.log(`[ARTICLE_CREATE] Tentative de création par l'utilisateur: ${req.user.id}`);
+    const {
+      titre,
+      description,
+      prix,
+      etat,
+      categorie,
+      quantite,
+      mainImageIndex,
+    } = req.body;
 
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "Au moins une image est requise." });
+      return res
+        .status(400)
+        .json({ message: "Au moins une image est requise." });
     }
 
     if (req.files.length > 5) {
-      return res.status(400).json({ message: "Vous ne pouvez envoyer que 5 images maximum." });
+      return res
+        .status(400)
+        .json({ message: "Vous ne pouvez envoyer que 5 images maximum." });
     }
 
     const imageUrls = req.files.map((file) => file.path);
@@ -33,11 +58,11 @@ exports.createArticle = async (req, res) => {
     });
 
     await article.save();
-    console.log(`[ARTICLE_CREATE] Succès: Article créé avec l'ID ${article._id}`);
     res.status(201).json(article);
   } catch (err) {
-    console.error(`[ARTICLE_CREATE_ERROR] :`, err);
-    res.status(500).json({ message: "Erreur lors de la création.", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la création.", error: err.message });
   }
 };
 
@@ -46,14 +71,16 @@ exports.getAllArticles = async (req, res) => {
     const articles = await Article.find().populate("createdBy", "nom email");
     res.status(200).json(articles);
   } catch (err) {
-    console.error(`[GET_ALL_ARTICLES_ERROR] :`, err);
     res.status(500).json({ message: "Erreur serveur.", error: err.message });
   }
 };
 
 exports.getArticleById = async (req, res) => {
   try {
-    const article = await Article.findById(req.params.id).populate("createdBy", "nom email");
+    const article = await Article.findById(req.params.id).populate(
+      "createdBy",
+      "nom email"
+    );
     if (!article) {
       return res.status(404).json({ message: "Article non trouvé." });
     }
@@ -70,17 +97,13 @@ exports.deleteArticle = async (req, res) => {
       return res.status(404).json({ message: "Article non trouvé." });
     }
 
+    // ATTENTION : Si tu supprimes ici, l'image disparaît des COMMANDES passées.
+    // Si tu acceptes cela pour économiser de l'espace :
     if (article.images && article.images.length > 0) {
       for (const url of article.images) {
-        if (url.includes("cloudinary.com")) {
-          try {
-            const parts = url.split('/');
-            const fileName = parts[parts.length - 1];
-            const publicId = fileName.split('.')[0];
-            await cloudinary.uploader.destroy(`articles/${publicId}`);
-          } catch (cloudErr) {
-            console.error(`[CLOUDINARY_DELETE_ERROR] :`, cloudErr);
-          }
+        const publicId = extractPublicId(url);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
         }
       }
     }
@@ -88,32 +111,46 @@ exports.deleteArticle = async (req, res) => {
     await Article.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Article supprimé avec succès." });
   } catch (err) {
-    res.status(500).json({ message: "Erreur lors de la suppression.", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la suppression.", error: err.message });
   }
 };
 
 exports.updateArticle = async (req, res) => {
   try {
-    const { titre, description, prix, etat, categorie, quantite, existingImages, mainImageIndex } = req.body;
-    
+    const {
+      titre,
+      description,
+      prix,
+      etat,
+      categorie,
+      quantite,
+      existingImages,
+      mainImageIndex,
+    } = req.body;
+
     const article = await Article.findById(req.params.id);
     if (!article) {
       return res.status(404).json({ message: "Article non trouvé." });
     }
 
     const keptImages = existingImages
-      ? Array.isArray(existingImages) ? existingImages : [existingImages]
+      ? Array.isArray(existingImages)
+        ? existingImages
+        : [existingImages]
       : [];
 
-    const imagesToDelete = article.images.filter((img) => !keptImages.includes(img));
+    // On identifie les images qui ne sont plus utilisées dans cet article
+    const imagesToDelete = article.images.filter(
+      (img) => !keptImages.includes(img)
+    );
 
     for (const url of imagesToDelete) {
-      if (url.includes("cloudinary.com")) {
+      const publicId = extractPublicId(url);
+      if (publicId) {
         try {
-          const parts = url.split('/');
-          const fileName = parts[parts.length - 1];
-          const publicId = fileName.split('.')[0];
-          await cloudinary.uploader.destroy(`articles/${publicId}`);
+          await cloudinary.uploader.destroy(publicId);
         } catch (cloudErr) {
           console.error(`[CLOUDINARY_DELETE_ERROR] :`, cloudErr);
         }
@@ -138,7 +175,6 @@ exports.updateArticle = async (req, res) => {
 
     await article.save();
     res.json({ message: "Article mis à jour avec succès.", article });
-
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur.", error: err.message });
   }

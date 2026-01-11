@@ -57,6 +57,11 @@ exports.login = async (req, res) => {
       $set: { lastActivity: new Date() },
     });
 
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("user_status_change", { userId: user._id, status: "online" });
+    }
+
     const token = generateToken(user);
     res.status(200).json({
       message: "Connexion réussie.",
@@ -95,14 +100,18 @@ exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-motDePasse").lean();
 
-    // On récupère tous les paniers pour les associer aux utilisateurs
-    const carts = await Cart.find().populate("items.article").lean();
+    const carts = await Cart.find()
+      .populate("items.article", "nom prix images")
+      .lean();
 
     const usersWithCarts = users.map((u) => {
       const userCart = carts.find(
-        (c) => c.user.toString() === u._id.toString()
+        (c) => c.user && c.user.toString() === u._id.toString()
       );
-      return { ...u, cart: userCart || { items: [] } };
+      return {
+        ...u,
+        cart: userCart || { items: [] },
+      };
     });
 
     res.status(200).json(usersWithCarts);
@@ -122,17 +131,15 @@ exports.updateUser = async (req, res) => {
     if (role) user.role = role;
     if (motDePasse) user.motDePasse = motDePasse;
     await user.save();
-    res
-      .status(200)
-      .json({
-        message: "Succès",
-        user: {
-          id: user._id,
-          nom: user.nom,
-          email: user.email,
-          role: user.role,
-        },
-      });
+    res.status(200).json({
+      message: "Succès",
+      user: {
+        id: user._id,
+        nom: user.nom,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Erreur", error: error.message });
   }

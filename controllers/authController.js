@@ -60,7 +60,7 @@ exports.login = async (req, res) => {
     const io = req.app.get("io");
     if (io) {
       io.emit("user_status_change", { userId: user._id, status: "online" });
-      io.emit("cart_updated"); 
+      io.emit("cart_updated");
     }
 
     const token = generateToken(user);
@@ -105,12 +105,18 @@ exports.getAllUsers = async (req, res) => {
       .populate("items.article", "nom prix images")
       .lean();
 
+    const connectedUsers = req.app.get("connectedUsers");
+
     const usersWithCarts = users.map((u) => {
       const userCart = carts.find(
         (c) => c.user && c.user.toString() === u._id.toString()
       );
+
+      const isOnline = connectedUsers && connectedUsers.has(u._id.toString());
+
       return {
         ...u,
+        socketStatus: isOnline ? "online" : "offline",
         cart: userCart || { items: [] },
       };
     });

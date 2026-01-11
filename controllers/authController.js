@@ -60,6 +60,7 @@ exports.login = async (req, res) => {
     const io = req.app.get("io");
     if (io) {
       io.emit("user_status_change", { userId: user._id, status: "online" });
+      io.emit("cart_updated"); 
     }
 
     const token = generateToken(user);

@@ -39,6 +39,18 @@ exports.createOrder = async (req, res) => {
       });
 
       if (article.quantite <= 0) {
+        // NOTE: On ne nettoie Cloudinary que si l'image n'est utilisée dans AUCUNE commande passée.
+        // On boucle sur TOUTES les images de l'article avant de le supprimer.
+        for (const imgUrl of article.images) {
+          const isUsedInOtherOrders = await Order.findOne({ "items.image": imgUrl });
+          
+          if (!isUsedInOtherOrders) {
+            const publicId = extractPublicId(imgUrl);
+            if (publicId) {
+              await cloudinary.uploader.destroy(publicId);
+            }
+          }
+        }
         await Article.findByIdAndDelete(article._id);
       } else {
         await article.save();
@@ -99,14 +111,15 @@ exports.updateOrderStatus = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
   try {
     const { id } = req.params;
-  
     const order = await Order.findById(id);
     if (!order) return res.status(404).json({ message: "Commande introuvable." });
+
     for (const item of order.items) {
       if (item.image) {
         const articleExists = await Article.findById(item.article);
         const otherOrderUsingImg = await Order.findOne({ _id: { $ne: id }, "items.image": item.image });
         
+        // Si l'article n'existe plus et aucune autre commande n'en a besoin
         if (!articleExists && !otherOrderUsingImg) {
           const publicId = extractPublicId(item.image);
           if (publicId) await cloudinary.uploader.destroy(publicId);

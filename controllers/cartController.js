@@ -2,6 +2,13 @@ const Cart = require("../models/Cart");
 const Article = require("../models/Article");
 const User = require("../models/User");
 
+const notifyCartUpdate = (req) => {
+  const io = req.app.get("io");
+  if (io) {
+    io.emit("cart_updated");
+  }
+};
+
 exports.getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).populate(
@@ -43,6 +50,8 @@ exports.addToCart = async (req, res) => {
 
     await User.findByIdAndUpdate(req.user.id, { lastActivity: new Date() });
 
+    notifyCartUpdate(req);
+
     res.json(cart);
   } catch (error) {
     res.status(500).json({ message: "Erreur lors de l'ajout au panier." });
@@ -63,6 +72,8 @@ exports.removeFromCart = async (req, res) => {
 
     await User.findByIdAndUpdate(req.user.id, { lastActivity: new Date() });
 
+    notifyCartUpdate(req);
+
     res.json(cart);
   } catch (error) {
     res.status(500).json({ message: "Erreur lors de la suppression." });
@@ -72,6 +83,9 @@ exports.removeFromCart = async (req, res) => {
 exports.clearCart = async (req, res) => {
   try {
     await Cart.findOneAndDelete({ user: req.user.id });
+
+    notifyCartUpdate(req);
+
     res.json({ message: "Panier vidé." });
   } catch (error) {
     res.status(500).json({ message: "Erreur lors du nettoyage du panier." });

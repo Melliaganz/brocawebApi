@@ -122,3 +122,17 @@ exports.updateOrderStatus = async (req, res) => {
       .json({ message: "Erreur lors de la mise à jour", error: err.message });
   }
 };
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByIdAndDelete(id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Commande introuvable." });
+    }
+
+    res.status(200).json({ message: "Commande supprimée avec succès." });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur lors de la suppression", error: err.message });
+  }
+};

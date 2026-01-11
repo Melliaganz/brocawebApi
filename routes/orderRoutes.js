@@ -4,7 +4,8 @@ const {
   createOrder, 
   getAllOrders, 
   getUserOrders, 
-  updateOrderStatus 
+  updateOrderStatus, 
+  deleteOrder
 } = require("../controllers/orderController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -14,6 +15,7 @@ router.get("/my-orders", authMiddleware, getUserOrders);
 // Routes générales & Admin
 router.post("/", authMiddleware, createOrder);
 router.get("/", authMiddleware, getAllOrders);
-router.put("/:id/status", authMiddleware, updateOrderStatus); // Nouvelle route admin
+router.put("/:id/status", authMiddleware, updateOrderStatus);
+router.delete("/:id", authMiddleware, deleteOrder)
 
 module.exports = router;

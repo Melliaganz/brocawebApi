@@ -1,14 +1,10 @@
 const Article = require("../models/Article");
 const cloudinary = require("cloudinary").v2;
 
-// Fonction utilitaire pour extraire le public_id correctement
 const extractPublicId = (url) => {
   try {
-    // Découpe l'URL pour récupérer la partie après 'upload/'
     const parts = url.split("upload/")[1].split("/");
-    // On enlève le premier élément (la version v12345678)
     parts.shift();
-    // On récupère le reste et on enlève l'extension (.jpg, .png)
     const publicIdWithExtension = parts.join("/");
     return publicIdWithExtension.split(".")[0];
   } catch (err) {
@@ -24,7 +20,7 @@ exports.createArticle = async (req, res) => {
       prix,
       etat,
       categorie,
-      quantite,
+      stock,
       mainImageIndex,
     } = req.body;
 
@@ -48,7 +44,7 @@ exports.createArticle = async (req, res) => {
       prix,
       etat,
       categorie,
-      quantite: quantite !== undefined ? Number(quantite) : 1,
+      stock: stock !== undefined ? Number(stock) : 1,
       images: imageUrls,
       mainImageIndex: Math.min(
         Math.max(parseInt(mainImageIndex) || 0, 0),
@@ -97,8 +93,6 @@ exports.deleteArticle = async (req, res) => {
       return res.status(404).json({ message: "Article non trouvé." });
     }
 
-    // ATTENTION : Si tu supprimes ici, l'image disparaît des COMMANDES passées.
-    // Si tu acceptes cela pour économiser de l'espace :
     if (article.images && article.images.length > 0) {
       for (const url of article.images) {
         const publicId = extractPublicId(url);
@@ -125,7 +119,7 @@ exports.updateArticle = async (req, res) => {
       prix,
       etat,
       categorie,
-      quantite,
+      stock,
       existingImages,
       mainImageIndex,
     } = req.body;
@@ -141,7 +135,6 @@ exports.updateArticle = async (req, res) => {
         : [existingImages]
       : [];
 
-    // On identifie les images qui ne sont plus utilisées dans cet article
     const imagesToDelete = article.images.filter(
       (img) => !keptImages.includes(img)
     );
@@ -165,9 +158,9 @@ exports.updateArticle = async (req, res) => {
     article.etat = etat || article.etat;
     article.categorie = categorie || article.categorie;
 
-    if (quantite !== undefined) {
-      const q = Number(quantite);
-      article.quantite = isNaN(q) ? article.quantite : q;
+    if (stock !== undefined) {
+      const s = Number(stock);
+      article.stock = isNaN(s) ? article.stock : s;
     }
 
     article.images = [...keptImages, ...newImages];

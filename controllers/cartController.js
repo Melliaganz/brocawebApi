@@ -1,88 +1,90 @@
 const Cart = require("../models/Cart");
 const Article = require("../models/Article");
-const User = require("../models/User");
-
-const notifyCartUpdate = (req) => {
-  const io = req.app.get("io");
-  if (io) {
-    io.emit("cart_updated");
-  }
-};
 
 exports.getCart = async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ user: req.user.id }).populate(
-      "items.article"
-    );
-    res.json(cart || { items: [] });
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la récupération du panier." });
-  }
+    try {
+        let cart = await Cart.findOne({ user: req.user.id }).populate("items.article");
+        if (!cart) {
+            cart = await Cart.create({ user: req.user.id, items: [] });
+        }
+        res.status(200).json(cart);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération du panier." });
+    }
 };
 
 exports.addToCart = async (req, res) => {
-  try {
-    const { articleId, quantite } = req.body;
-    if (quantite < 1) return res.status(400).json({ message: "Quantité invalide." });
+    try {
+        const { articleId, quantite } = req.body;
+        const qtyToAdd = parseInt(quantite);
 
-    const article = await Article.findById(articleId);
-    if (!article) return res.status(404).json({ message: "Article introuvable." });
-    if (quantite > article.stock) return res.status(400).json({ message: "Stock insuffisant." });
+        if (isNaN(qtyToAdd) || qtyToAdd < 1) {
+            return res.status(400).json({ message: "Quantité invalide." });
+        }
 
-    let cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) cart = new Cart({ user: req.user.id, items: [] });
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: "Article non trouvé." });
+        }
 
-    const existingItem = cart.items.find(
-      (item) => item.article.toString() === articleId
-    );
-    
-    if (existingItem) {
-      existingItem.quantite = quantite;
-    } else {
-      cart.items.push({ article: articleId, quantite });
+        if (qtyToAdd > article.stock) {
+            return res.status(400).json({ message: "Stock insuffisant." });
+        }
+
+        let cart = await Cart.findOne({ user: req.user.id });
+        if (!cart) {
+            cart = new Cart({ user: req.user.id, items: [] });
+        }
+
+        const itemIndex = cart.items.findIndex(item => item.article.toString() === articleId);
+
+        if (itemIndex > -1) {
+            cart.items[itemIndex].quantite = qtyToAdd;
+        } else {
+            cart.items.push({ article: articleId, quantite: qtyToAdd });
+        }
+
+        await cart.save();
+        await cart.populate("items.article");
+
+        const io = req.app.get("io");
+        if (io) io.emit("cart_updated");
+
+        res.status(200).json(cart);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de l'ajout au panier." });
     }
-
-    await cart.save();
-    await User.findByIdAndUpdate(req.user.id, { lastActivity: new Date() });
-
-    notifyCartUpdate(req);
-    res.json(cart);
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de l'ajout au panier." });
-  }
 };
 
 exports.removeFromCart = async (req, res) => {
-  try {
-    const { articleId } = req.params;
-    const cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) return res.status(404).json({ message: "Panier introuvable." });
+    try {
+        const { articleId } = req.params;
+        let cart = await Cart.findOne({ user: req.user.id });
 
-    cart.items = cart.items.filter(
-      (item) => item.article.toString() !== articleId
-    );
-    
-    await cart.save();
-    await User.findByIdAndUpdate(req.user.id, { lastActivity: new Date() });
+        if (cart) {
+            cart.items = cart.items.filter(item => item.article.toString() !== articleId);
+            await cart.save();
+            await cart.populate("items.article");
 
-    notifyCartUpdate(req);
-    res.json(cart);
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la suppression." });
-  }
+            const io = req.app.get("io");
+            if (io) io.emit("cart_updated");
+        }
+
+        res.status(200).json(cart);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la suppression." });
+    }
 };
 
 exports.clearCart = async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ user: req.user.id });
-    if (cart) {
-      cart.items = []; 
-      await cart.save();
+    try {
+        let cart = await Cart.findOne({ user: req.user.id });
+        if (cart) {
+            cart.items = [];
+            await cart.save();
+        }
+        res.status(200).json({ message: "Panier vidé.", items: [] });
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la réinitialisation du panier." });
     }
-
-    notifyCartUpdate(req);
-    res.json({ message: "Panier vidé." });
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors du nettoyage du panier." });
-  }
 };

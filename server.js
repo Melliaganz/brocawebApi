@@ -3,19 +3,23 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
-const fs = require('fs');
+const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
 
 dotenv.config();
+
+if (process.env.NODE_ENV === "test") {
+  process.env.JWT_SECRET = "testsecret";
+}
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 app.use(cors());
@@ -23,12 +27,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const uploadDir = path.join(__dirname, 'uploads');
+const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir);
 }
 
-// Stockage des utilisateurs connectés (userId -> socketId)
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
@@ -48,7 +51,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// Rendre io accessible dans les routes si besoin
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
@@ -65,7 +67,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/categories", categoryRoutes);
 
 app.post("/test-body", (req, res) => {
-    res.json({ body: req.body });
+  res.json({ body: req.body });
 });
 
 const multer = require("multer");
@@ -74,20 +76,33 @@ app.use((err, req, res, next) => {
     if (err.code === "LIMIT_FILE_COUNT") {
       return res.status(400).json({ message: "Limite de 5 images dépassée." });
     }
-    return res.status(400).json({ message: "Erreur Multer lors de l'upload.", error: err.message });
+    return res
+      .status(400)
+      .json({ message: "Erreur Multer lors de l'upload.", error: err.message });
   }
 
   const status = err.status || 500;
-  res.status(status).json({ 
+  res.status(status).json({
     message: err.message || "Une erreur interne est survenue.",
-    error: process.env.NODE_ENV === 'development' ? err.stack : err.message 
+    error: process.env.NODE_ENV === "development" ? err.stack : err.message,
   });
 });
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ Connecté à MongoDB");
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => console.log(`🚀 Serveur et WebSockets lancés sur le port ${PORT}`));
-  })
-  .catch((err) => console.error("❌ Erreur MongoDB :", err.message));
+if (process.env.NODE_ENV !== "test") {
+  const dbUri = process.env.NODE_ENV === "production" 
+    ? process.env.MONGO_URI 
+    : process.env.MONGO_URI; 
+
+  mongoose
+    .connect(dbUri)
+    .then(() => {
+      console.log(`✅ Connecté à MongoDB (${process.env.NODE_ENV || 'development'})`);
+      const PORT = process.env.PORT || 5000;
+      server.listen(PORT, () =>
+        console.log(`🚀 Serveur et WebSockets lancés sur le port ${PORT}`)
+      );
+    })
+    .catch((err) => console.error("❌ Erreur MongoDB :", err.message));
+}
+
+module.exports = app;

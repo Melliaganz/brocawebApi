@@ -100,10 +100,15 @@ exports.adminCreateUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-motDePasse").lean();
-
-    const carts = await Cart.find()
-      .populate("items.article", "nom prix images")
-      .lean();
+    
+    let carts = [];
+    try {
+      carts = await Cart.find()
+        .populate("items.article", "nom prix images")
+        .lean();
+    } catch (cartError) {
+      carts = [];
+    }
 
     const connectedUsers = req.app.get("connectedUsers");
 
@@ -112,10 +117,14 @@ exports.getAllUsers = async (req, res) => {
         (c) => c.user && c.user.toString() === u._id.toString()
       );
 
-      const isOnline = connectedUsers && connectedUsers.has(u._id.toString());
+      let isOnline = false;
+      if (connectedUsers && typeof connectedUsers.has === "function") {
+        isOnline = connectedUsers.has(u._id.toString());
+      }
 
       return {
         ...u,
+        id: u._id,
         socketStatus: isOnline ? "online" : "offline",
         cart: userCart || { items: [] },
       };
@@ -123,7 +132,7 @@ exports.getAllUsers = async (req, res) => {
 
     res.status(200).json(usersWithCarts);
   } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la récupération." });
+    res.status(500).json({ message: "Erreur lors de la récupération.", error: error.message });
   }
 };
 
@@ -163,7 +172,7 @@ exports.deleteUser = async (req, res) => {
     await Cart.findOneAndDelete({ user: req.params.id });
     res.status(200).json({ message: "Supprimé." });
   } catch (error) {
-    res.status(500).json({ message: "Erreur." });
+    res.status(500).json({ message: "Erreur.", error: error.message });
   }
 };
 

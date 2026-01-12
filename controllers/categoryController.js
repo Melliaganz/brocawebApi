@@ -6,7 +6,9 @@ exports.getCategories = async (req, res) => {
     const categories = await Category.find().sort({ name: 1 });
     res.status(200).json(categories);
   } catch (err) {
-    res.status(500).json({ message: "Erreur lors de la récupération des catégories" });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la récupération des catégories" });
   }
 };
 
@@ -15,11 +17,13 @@ exports.createCategory = async (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-      return res.status(400).json({ message: "Le nom de la catégorie est requis." });
+      return res
+        .status(400)
+        .json({ message: "Le nom de la catégorie est requis." });
     }
 
-    const existingCategory = await Category.findOne({ 
-      name: { $regex: new RegExp(`^${name}$`, "i") } 
+    const existingCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
     });
 
     if (existingCategory) {
@@ -43,11 +47,13 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ message: "Catégorie introuvable." });
     }
 
-    const articleCount = await Article.countDocuments({ categorie: categoryToDelete.name });
-    
+    const articleCount = await Article.countDocuments({
+      categorie: categoryToDelete.name,
+    });
+
     if (articleCount > 0) {
-      return res.status(400).json({ 
-        message: `Impossible de supprimer : ${articleCount} article(s) utilisent encore cette catégorie.` 
+      return res.status(400).json({
+        message: `Impossible de supprimer : ${articleCount} article(s) utilisent encore cette catégorie.`,
       });
     }
 

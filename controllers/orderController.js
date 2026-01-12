@@ -15,20 +15,31 @@ const extractPublicId = (url) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, totalAmount, shippingAddress } = req.body;
     const userId = req.user.id;
     const updatedItems = [];
 
+    // Sécurité : Vérifier si items existe
+    if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ message: "La liste des articles est requise." });
+    }
+
     for (const item of items) {
-      const article = await Article.findById(item.articleId);
+      // Harmonisation : Accepter 'article' ou 'articleId'
+      const targetId = item.articleId || item.article;
+      const article = await Article.findById(targetId);
+      
       if (!article) return res.status(404).json({ message: "Article introuvable." });
 
-      if (article.quantite < item.quantity)
+      if (article.stock < item.quantity)
         return res.status(400).json({ message: `Stock insuffisant pour ${article.titre}` });
 
-      article.quantite -= item.quantity;
+      article.stock -= item.quantity;
 
-      const mainImage = article.images && article.images.length > 0 ? article.images[0] : null;
+      const mainImgIndex = article.mainImageIndex || 0;
+      const mainImage = article.images && article.images.length > 0 
+        ? (article.images[mainImgIndex] || article.images[0]) 
+        : null;
 
       updatedItems.push({
         article: article._id,
@@ -38,18 +49,15 @@ exports.createOrder = async (req, res) => {
         image: mainImage, 
       });
 
-      if (article.quantite <= 0) {
-        // NOTE: On ne nettoie Cloudinary que si l'image n'est utilisée dans AUCUNE commande passée.
-        // On boucle sur TOUTES les images de l'article avant de le supprimer.
-        for (const imgUrl of article.images) {
-          const isUsedInOtherOrders = await Order.findOne({ "items.image": imgUrl });
-          
-          if (!isUsedInOtherOrders) {
-            const publicId = extractPublicId(imgUrl);
-            if (publicId) {
-              await cloudinary.uploader.destroy(publicId);
+      if (article.stock <= 0) {
+        if (article.images && article.images.length > 0) {
+            for (const imgUrl of article.images) {
+                const isUsedInOtherOrders = await Order.findOne({ "items.image": imgUrl });
+                if (!isUsedInOtherOrders) {
+                    const publicId = extractPublicId(imgUrl);
+                    if (publicId) await cloudinary.uploader.destroy(publicId);
+                }
             }
-          }
         }
         await Article.findByIdAndDelete(article._id);
       } else {
@@ -61,12 +69,16 @@ exports.createOrder = async (req, res) => {
       user: userId,
       items: updatedItems,
       status: "En cours",
-      totalPrice: updatedItems.reduce((acc, curr) => acc + curr.prix * curr.quantity, 0),
+      // Harmonisation des noms de champs entre test et modèle
+      totalAmount: totalAmount || updatedItems.reduce((acc, curr) => acc + curr.prix * curr.quantity, 0),
+      totalPrice: totalAmount || updatedItems.reduce((acc, curr) => acc + curr.prix * curr.quantity, 0),
+      shippingAddress: shippingAddress || "Adresse non fournie"
     });
 
     await order.save();
     res.status(201).json(order);
   } catch (err) {
+    // On renvoie l'erreur précise pour debugger si ça crash encore
     res.status(500).json({ message: "Erreur lors de la création", error: err.message });
   }
 };
@@ -96,7 +108,8 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const validStatuses = ["En cours", "Traité", "Livré"];
+    
+    const validStatuses = ["En cours", "Traité", "Expédiée", "Livré"];
     if (!validStatuses.includes(status)) return res.status(400).json({ message: "Statut invalide." });
 
     const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
@@ -111,6 +124,8 @@ exports.updateOrderStatus = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id || id === "undefined") return res.status(400).json({ message: "ID invalide" });
+
     const order = await Order.findById(id);
     if (!order) return res.status(404).json({ message: "Commande introuvable." });
 

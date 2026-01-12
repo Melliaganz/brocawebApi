@@ -172,12 +172,12 @@ __metadata:
   resolution: "backendbroca@workspace:."
   dependencies:
     bcryptjs: "npm:^3.0.3"
-    cloudinary: "npm:^1.41.3"
+    cloudinary: "npm:^2.8.0"
     cors: "npm:^2.8.5"
     dotenv: "npm:^17.2.3"
     express: "npm:^5.2.1"
     jsonwebtoken: "npm:^9.0.3"
-    mongoose: "npm:^9.1.2"
+    mongoose: "npm:^9.1.3"
     multer: "npm:^2.0.2"
     multer-storage-cloudinary: "npm:^4.0.0"
     nodemon: "npm:^3.1.11"
@@ -353,24 +353,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cloudinary-core@npm:^2.13.0":
-  version: 2.14.0
-  resolution: "cloudinary-core@npm:2.14.0"
-  peerDependencies:
-    lodash: ">=4.0"
-  checksum: 10c0/65f4c7af952a4b1a2282c560182173ff84065787a1b44b226949a53abf6b258777fd24a4caa00ce4839a3ebd22790d2d861d02ffd258df7d04803f36ca5155b7
-  languageName: node
-  linkType: hard
-
-"cloudinary@npm:^1.41.3":
-  version: 1.41.3
-  resolution: "cloudinary@npm:1.41.3"
+"cloudinary@npm:^2.8.0":
+  version: 2.8.0
+  resolution: "cloudinary@npm:2.8.0"
   dependencies:
-    cloudinary-core: "npm:^2.13.0"
-    core-js: "npm:^3.30.1"
     lodash: "npm:^4.17.21"
     q: "npm:^1.5.1"
-  checksum: 10c0/1f49107e091b6a1c45a1f1ba424437fb1f90c50903f1e04a37b94e0cde46fb074179d8a647cb18ccacb33d155ab63a011ccaa4ba47665ba43b94f6ccd585a058
+  checksum: 10c0/67e1830f5ab5d9378c021a2057d54d09757df3487f43015fa83885240055ad6ba193ef2392fa104ffa498e32b4e1e378da30661364b65dec81b159b58225f790
   languageName: node
   linkType: hard
 
@@ -418,13 +407,6 @@ __metadata:
   version: 0.7.2
   resolution: "cookie@npm:0.7.2"
   checksum: 10c0/9596e8ccdbf1a3a88ae02cf5ee80c1c50959423e1022e4e60b91dd87c622af1da309253d8abdb258fb5e3eacb4f08e579dc58b4897b8087574eee0fd35dfa5d2
-  languageName: node
-  linkType: hard
-
-"core-js@npm:^3.30.1":
-  version: 3.47.0
-  resolution: "core-js@npm:3.47.0"
-  checksum: 10c0/9b1a7088b7c660c7b8f1d4c90bb1816a8d5352ebdcb7bc742e3a0e4eb803316b5aa17bacb8769522342196351a5430178f46914644f2bfdb94ce0ced3c7fd523
   languageName: node
   linkType: hard
 
@@ -1294,9 +1276,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mongoose@npm:^9.1.2":
-  version: 9.1.2
-  resolution: "mongoose@npm:9.1.2"
+"mongoose@npm:^9.1.3":
+  version: 9.1.3
+  resolution: "mongoose@npm:9.1.3"
   dependencies:
     kareem: "npm:3.0.0"
     mongodb: "npm:~7.0"
@@ -1304,7 +1286,7 @@ __metadata:
     mquery: "npm:6.0.0"
     ms: "npm:2.1.3"
     sift: "npm:17.1.3"
-  checksum: 10c0/acb0ea5ab3d93f017316597236f0ae6894ca41de5a3e1804ade24e509fe394f538f6ca658da2b4da25563fe9a8e005b6f07a028b81c96deba4ab3d1b68d3b1f7
+  checksum: 10c0/94049f1fd40dfeb2153a4b0171d83552f169fcb41f50b1301055de86859c14f752303f0817b3d99a85ae1534f5295906827ad73d7cd1db6831ac4708428e9119
   languageName: node
   linkType: hard
 

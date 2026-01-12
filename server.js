@@ -9,6 +9,7 @@ const { Server } = require("socket.io");
 
 dotenv.config();
 
+// Configuration spécifique au mode test
 if (process.env.NODE_ENV === "test") {
   process.env.JWT_SECRET = "testsecret";
 }
@@ -54,6 +55,7 @@ io.on("connection", (socket) => {
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
+// Routes
 const authRoutes = require("./routes/auth");
 const articleRoutes = require("./routes/articles");
 const cartRoutes = require("./routes/cart");
@@ -70,6 +72,7 @@ app.post("/test-body", (req, res) => {
   res.json({ body: req.body });
 });
 
+// Middleware d'erreur Multer et Global
 const multer = require("multer");
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -88,18 +91,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Connexion MongoDB (Ignorée en mode test car gérée par mongodb-memory-server dans les tests)
 if (process.env.NODE_ENV !== "test") {
-  const dbUri = process.env.NODE_ENV === "production" 
-    ? process.env.MONGO_URI 
-    : process.env.MONGO_URI; 
+  const dbUri = process.env.MONGO_URI; 
 
   mongoose
     .connect(dbUri)
     .then(() => {
-      console.log(`✅ Connecté à MongoDB (${process.env.NODE_ENV || 'development'})`);
+      console.log(`✅ Connecté à MongoDB en mode : ${process.env.NODE_ENV || 'development'}`);
       const PORT = process.env.PORT || 5000;
       server.listen(PORT, () =>
-        console.log(`🚀 Serveur et WebSockets lancés sur le port ${PORT}`)
+        console.log(`🚀 Serveur lancé sur le port ${PORT}`)
       );
     })
     .catch((err) => console.error("❌ Erreur MongoDB :", err.message));

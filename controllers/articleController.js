@@ -41,7 +41,7 @@ exports.createArticle = async (req, res) => {
     const article = new Article({
       titre,
       description,
-      prix,
+      prix: Number(prix),
       etat,
       categorie,
       stock: stock !== undefined ? Number(stock) : 1,
@@ -154,7 +154,7 @@ exports.updateArticle = async (req, res) => {
 
     article.titre = titre || article.titre;
     article.description = description || article.description;
-    article.prix = prix || article.prix;
+    article.prix = prix !== undefined ? Number(prix) : article.prix;
     article.etat = etat || article.etat;
     article.categorie = categorie || article.categorie;
 

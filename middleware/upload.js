@@ -12,14 +12,24 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'articles',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif']
-    // AUCUNE transformation ici
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    public_id: (req, file) => `file_${Date.now()}_${Math.floor(Math.random() * 1000)}`
   },
 });
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { 
+    files: 20 
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/png", "image/jpg", "image/jpeg", "image/webp", "image/gif"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Format de fichier non supporté"), false);
+    }
+  }
 });
 
 module.exports = upload;

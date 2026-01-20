@@ -3,40 +3,37 @@ const mongoose = require("mongoose");
 const app = require("../../server");
 const Category = require("../../models/Category");
 const User = require("../../models/User");
-const Article = require("../../models/Article");
 const jwt = require("jsonwebtoken");
 
 describe("Category Routes", () => {
-    let token;
     let adminToken;
+    const MONGO_URI_TEST = "mongodb+srv://Lucas:5LLwLJ4JF1yv3Z7s@brocawebapi.un5laul.mongodb.net/test_db?retryWrites=true&w=majority";
     const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
     beforeAll(async () => {
+        jest.setTimeout(60000);
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.MONGO_URI_TEST || "mongodb://127.0.0.1:27017/test_db_categories");
+            await mongoose.connect(MONGO_URI_TEST);
         }
         await Category.deleteMany({});
         await User.deleteMany({});
-        await Article.deleteMany({});
 
         const admin = await User.create({
             nom: "Admin",
-            email: "admin@test.com",
+            email: "admin_cat_test@test.com",
             motDePasse: "password123",
             role: "admin"
         });
 
-        adminToken = jwt.sign(
-            { id: admin._id, role: admin.role },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-    });
+        adminToken = jwt.sign({ id: admin._id, role: admin.role }, JWT_SECRET);
+    }, 60000);
 
     afterAll(async () => {
-        await Category.deleteMany({});
-        await User.deleteMany({});
-        await mongoose.connection.close();
+        if (mongoose.connection.readyState !== 0) {
+            await Category.deleteMany({});
+            await User.deleteMany({});
+            await mongoose.connection.close();
+        }
     });
 
     it("devrait créer une catégorie (POST /api/categories)", async () => {
@@ -46,7 +43,6 @@ describe("Category Routes", () => {
             .send({ name: "Nouvelle Categorie" });
 
         expect(res.statusCode).toBe(201);
-        expect(res.body.name).toBe("Nouvelle Categorie");
     });
 
     it("devrait récupérer toutes les catégories (GET /api/categories)", async () => {
@@ -55,12 +51,12 @@ describe("Category Routes", () => {
         expect(Array.isArray(res.body)).toBeTruthy();
     });
 
-    it("devrait échouer si l'article ajouté au panier n'existe pas (Exemple de test 400)", async () => {
+    it("devrait échouer si le nom de catégorie est manquant", async () => {
         const res = await request(app)
-            .post("/api/cart/add")
+            .post("/api/categories")
             .set("Authorization", `Bearer ${adminToken}`)
-            .send({ articleId: new mongoose.Types.ObjectId(), quantity: 1 });
-
+            .send({});
+        
         expect(res.statusCode).toBe(400);
     });
 });

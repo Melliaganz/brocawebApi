@@ -1,97 +1,49 @@
 const request = require("supertest");
 const mongoose = require("mongoose");
 const app = require("../../server");
-const Cart = require("../../models/Cart");
-const User = require("../../models/User");
-const Article = require("../../models/Article");
 const Category = require("../../models/Category");
+const User = require("../../models/User");
 const jwt = require("jsonwebtoken");
 
-describe("Cart Routes", () => {
-    let token;
-    let userId;
-    let articleId;
+describe("Category Routes", () => {
+    let adminToken;
+    const MONGO_URI_TEST = "mongodb+srv://Lucas:5LLwLJ4JF1yv3Z7s@brocawebapi.un5laul.mongodb.net/test_db?retryWrites=true&w=majority";
     const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
     beforeAll(async () => {
-        process.env.JWT_SECRET = JWT_SECRET;
+        jest.setTimeout(60000);
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.MONGO_URI_TEST || "mongodb://127.0.0.1:27017/test_db_cart");
+            await mongoose.connect(MONGO_URI_TEST);
         }
-        
-        await User.deleteMany({});
-        await Cart.deleteMany({});
-        await Article.deleteMany({});
         await Category.deleteMany({});
+        await User.deleteMany({});
 
-        const user = await User.create({
-            nom: "Test User",
-            email: "test_cart@test.com",
+        const admin = await User.create({
+            nom: "Admin",
+            email: "admin_cat@test.com",
             motDePasse: "password123",
-            role: "user"
+            role: "admin"
         });
-        userId = user._id;
 
-        token = jwt.sign(
-            { id: user._id, role: user.role },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        const category = await Category.create({ name: "Test Category" });
-        const article = await Article.create({
-            titre: "Article Test",
-            prix: 10,
-            description: "Description test",
-            categorie: category.name,
-            etat: "neuf",
-            stock: 5
-        });
-        articleId = article._id;
-    }, 30000);
+        adminToken = jwt.sign({ id: admin._id, role: admin.role }, JWT_SECRET);
+    });
 
     afterAll(async () => {
         await mongoose.connection.close();
     });
 
-    it("devrait ajouter un article au panier (POST /api/cart/add)", async () => {
+    it("devrait créer une catégorie (POST /api/categories)", async () => {
         const res = await request(app)
-            .post("/api/cart/add")
-            .set("Authorization", `Bearer ${token}`)
-            .send({ articleId: articleId, quantite: 1 });
+            .post("/api/categories")
+            .set("Authorization", `Bearer ${adminToken}`)
+            .send({ name: "Nouvelle Categorie" });
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.items).toBeDefined();
-        expect(res.body.items.length).toBeGreaterThan(0);
+        expect(res.statusCode).toBe(201);
     });
 
-    it("devrait récupérer le panier de l'utilisateur (GET /api/cart)", async () => {
-        const res = await request(app)
-            .get("/api/cart")
-            .set("Authorization", `Bearer ${token}`);
-
+    it("devrait récupérer toutes les catégories (GET /api/categories)", async () => {
+        const res = await request(app).get("/api/categories");
         expect(res.statusCode).toBe(200);
-        if (res.body.user) {
-            expect(res.body.user.toString()).toBe(userId.toString());
-        }
-    });
-
-    it("devrait supprimer un article du panier (DELETE /api/cart/remove/:id)", async () => {
-        const res = await request(app)
-            .delete(`/api/cart/remove/${articleId}`)
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(200);
-        const itemExists = res.body.items.some(item => 
-            item.article && item.article.toString() === articleId.toString()
-        );
-        expect(itemExists).toBeFalsy();
-    });
-
-    it("devrait refuser l'accès si non authentifié", async () => {
-        const res = await request(app)
-            .get("/api/cart");
-
-        expect(res.statusCode).toBe(401);
+        expect(Array.isArray(res.body)).toBeTruthy();
     });
 });

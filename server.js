@@ -55,6 +55,9 @@ io.on("connection", (socket) => {
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
+app.get("/healthcheck", (req, res) => {
+  res.status(200).send("OK");
+});
 // Routes
 const authRoutes = require("./routes/auth");
 const articleRoutes = require("./routes/articles");

@@ -54,6 +54,31 @@ exports.createArticle = async (req, res) => {
     });
 
     await article.save();
+
+    const sendEmail = req.app.get("sendEmail");
+    if (sendEmail) {
+      const mainImage = imageUrls[article.mainImageIndex] || imageUrls[0];
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+          <h1 style="color: #2c3e50; text-align: center;">Nouveauté sur Broca Web !</h1>
+          <img src="${mainImage}" alt="${titre}" style="width: 100%; border-radius: 8px; margin-bottom: 15px;">
+          <h2 style="color: #34495e;">${titre}</h2>
+          <p style="color: #7f8c8d; line-height: 1.6;">${description.substring(0, 150)}...</p>
+          <p style="font-size: 18px; font-weight: bold; color: #e67e22;">Prix : ${prix}€</p>
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="${process.env.CLIENT_URL}/articles/${article._id}" 
+               style="background-color: #2980b9; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+               Voir l'article
+            </a>
+          </div>
+          <hr style="margin-top: 30px; border: 0; border-top: 1px solid #eee;">
+          <p style="font-size: 12px; color: #bdc3c7; text-align: center;">Vous recevez cet email car vous êtes inscrit sur Broca Web.</p>
+        </div>
+      `;
+
+      sendEmail(`Nouvel article : ${titre}`, emailHtml);
+    }
+
     res.status(201).json(article);
   } catch (err) {
     res

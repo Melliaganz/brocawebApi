@@ -6,10 +6,10 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
+const nodemailer = require("nodemailer");
 
 dotenv.config();
 
-// Configuration spécifique au mode test
 if (process.env.NODE_ENV === "test") {
   process.env.JWT_SECRET = "testsecret";
 }
@@ -22,6 +22,44 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: false, 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const sendEmailNotification = async (subject, htmlContent) => {
+  try {
+    const User = mongoose.model("User");
+    const users = await User.find({}, "email");
+    const emailList = users.map(u => u.email).filter(email => email);
+
+    if (emailList.length === 0) {
+      console.log("Aucun utilisateur avec email trouvé.");
+      return;
+    }
+
+    const mailOptions = {
+      from: `"Broca Web" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      bcc: emailList,
+      subject: subject,
+      html: htmlContent,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("Emails de notification envoyés en BCC avec succès.");
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email :", error);
+  }
+};
+
+app.set("sendEmail", sendEmailNotification);
 
 app.use(cors());
 app.use(express.json());
@@ -58,7 +96,7 @@ app.set("connectedUsers", connectedUsers);
 app.get("/healthcheck", (req, res) => {
   res.status(200).send("OK");
 });
-// Routes
+
 const authRoutes = require("./routes/auth");
 const articleRoutes = require("./routes/articles");
 const cartRoutes = require("./routes/cart");
@@ -75,7 +113,6 @@ app.post("/test-body", (req, res) => {
   res.json({ body: req.body });
 });
 
-// Middleware d'erreur Multer et Global
 const multer = require("multer");
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -94,7 +131,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connexion MongoDB (Ignorée en mode test car gérée par mongodb-memory-server dans les tests)
 if (process.env.NODE_ENV !== "test") {
   const dbUri = process.env.MONGO_URI; 
 
